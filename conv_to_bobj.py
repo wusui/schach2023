@@ -67,15 +67,8 @@ def conv_to_bobj(setup):
                 if col_locs[0] == 'B':
                     return pstring.lower()
                 return pstring
-            def get_pindx(ploc):
-                def gp_inner():
-                    if len(ploc) == 2:
-                        return 'P'
-                    return ploc[0]
-                return ['12345678'.index(ploc[-1]) * 8 +
-                        'abcdefgh'.index(ploc[-2]), gp_inner()]
             def mk_pdict():
-                return dict(list(map(get_pindx, col_locs[1].split(','))))
+                return dict(list(map(alg_to_boinfo, col_locs[1].split(','))))
             def mk_string(dinfo):
                 def get_sq_char(indx):
                     if indx in dinfo.keys():
@@ -88,7 +81,19 @@ def conv_to_bobj(setup):
         return list(map(list, np.array_split(list(plocs), 8)))
     return parse_setup(setup.split('/'))
 
-if __name__ == "__main__":
-    print(conv_to_bobj('2/W:b6,Ra1,Kc8/B:a7,b7,Ka8,Bb8'))
-    print(conv_to_bobj(
-        '2/W:c5,Rg5,Bf4,d3,c2,e2,f2,Ra1,Qc1,Ke1/B:Rc3,f3,a2,Nb1,Kh1'))
+def alg_to_boinfo(ploc):
+    """
+    Convert algebraic position to piece/coordinate information
+    """
+    def gp_inner():
+        if len(ploc) == 2:
+            return 'P'
+        return ploc[0]
+    return ['12345678'.index(ploc[-1]) * 8 +
+            'abcdefgh'.index(ploc[-2]), gp_inner()]
+
+def get_sp_coord(ploc):
+    """
+    Convert algebraic position to [row, column] coordinates
+    """
+    return np.array_split(list(alg_to_boinfo(ploc)), 8)

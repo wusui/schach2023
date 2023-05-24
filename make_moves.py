@@ -3,7 +3,7 @@
 Make moves on the board
 """
 import itertools
-from conv_to_bobj import conv_to_bobj
+from conv_to_bobj import conv_to_bobj, get_sp_coord
 
 def are_they_in_check(board_obj):
     """
@@ -70,7 +70,22 @@ def make_a_move(info):
     Return a list of moves possible
     """
     def set_board(board_obj):
+        def opp_cases(squares):
+            if board_obj['board'][squares[0][0]][squares[0][1]] == ' ':
+                return False
+            if board_obj['board'][squares[1][0]][squares[1][1]] == ' ':
+                return False
+            if board_obj['board'][squares[0][0]][squares[0][1]].isupper() ==\
+                    board_obj['board'][squares[1][0]][squares[1][1]].isupper():
+                return False
+            return True
         def set_tosq_coords(tosq_coords):
+            def ep_check(from_to):
+                if abs(from_to[0][1] - from_to[1][1]) != 1:
+                    return False
+                if from_to[0][0] != {2:3, 5:4}[from_to[1][0]]:
+                    return False
+                return [from_to[0], from_to[1], 'ep']
             def analyze(piece):
                 def offsets(dloc):
                     if board_obj['board'][dloc[0]][dloc[1]] == ' ':
@@ -115,13 +130,29 @@ def make_a_move(info):
                     return False
                 def psolve(aloc):
                     def pdirect(pdir):
-                        def pwspos(start_row):
-                            print(pdir, start_row)
-                            import pdb; pdb.set_trace()
+                        def pwdtpos(dmv_row):
+                            if tosq_coords[1] == aloc[1]:
+                                if tosq_coords[0] == aloc[0] + pdir and \
+                                        board_obj['board'][tosq_coords[0]] \
+                                        [tosq_coords[1]] == ' ':
+                                    return [aloc, tosq_coords]
+                                if tosq_coords[0] == dmv_row and \
+                                        tosq_coords[0] == aloc[0] + 2 * pdir \
+                                        and board_obj['board'] \
+                                        [tosq_coords[0]][tosq_coords[1]] == \
+                                        ' ' and board_obj['board'] \
+                                        [tosq_coords[0]][tosq_coords[1] - \
+                                        pdir] == ' ':
+                                    return [aloc, tosq_coords]
+                            if abs(tosq_coords[1] - aloc[1]) == 1 and \
+                                    tosq_coords[0] == aloc[0] + pdir:
+                                if opp_cases([aloc, tosq_coords]):
+                                    return [aloc, tosq_coords]
+                            if board_obj['ep_square'] != '-':
+                                return ep_check([aloc, get_sp_coord(
+                                        board_obj['ep_square'])])
                             return False
-                        return pwspos([6, 1][(pdir + 1) // 2])
-                    print(board_obj)
-                    print(tosq_coords, piece, aloc)
+                        return pwdtpos([4, 3][(pdir + 1) // 2])
                     return pdirect([-1, 1][board_obj['moves'] % 2])
                 return {'K': ksolve, 'Q': qsolve, 'R': rsolve,
                         'B': bsolve, 'N': nsolve, 'P': psolve
@@ -129,6 +160,8 @@ def make_a_move(info):
             def opinfo(our_pcs):
                 return list(map(analyze, our_pcs))
             return opinfo(info[2])
+        # TO DO: Handle pawn promotion
+        # TO DOL Handle castling
         return set_tosq_coords(info[1])
     return set_board(info[0])
 
@@ -145,3 +178,5 @@ if __name__ == "__main__":
         conv_to_bobj('2/W:Ka1,Rh3/B:Kg3')))
     print(are_they_in_check(
         conv_to_bobj('2/W:Ka1,Qa3,Bh1/B:Ka8')))
+    print(are_they_in_check(
+        conv_to_bobj('2/W:Ka1,b5,Nh1/B:Ka6')))
