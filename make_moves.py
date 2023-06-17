@@ -3,14 +3,29 @@
 Make moves on the board
 """
 import itertools
-from conv_to_bobj import conv_to_bobj, get_sp_coord
+from conv_to_bobj import conv_to_bobj, get_coords, get_sp_coord
+
+def clean_up(alist):
+    """
+    Remove False entries from list
+    """
+    return list(filter(bool, alist))
+
+def board_to_linear(bobj):
+    """
+    Convert two dimensional board to a single list
+    """
+    return list(itertools.chain.from_iterable(bobj))
 
 def are_they_in_check(board_obj):
     """
     Determine if opponent is in check at start of move.  This means that
     the previous move made was illegal.
     """
-    return list(filter(None, find_moves(board_obj)(['K'])))
+    def op_kloc():
+        return get_coords(board_to_linear(board_obj['board']).index(
+                ['K', 'k'][board_obj['moves'] % 2]))
+    return list(filter(None, find_moves(board_obj)(op_kloc())))
 
 def find_moves(board_obj):
     """
@@ -21,11 +36,7 @@ def find_moves(board_obj):
     def find_moves_inner(sq_info):
         def set_side_ind(mpos):
             def atic_inner(lin_board):
-                def find_ek():
-                    return lin_board.index(['K', 'k'][mpos])
-                def get_coords(indx):
-                    return [indx // 8, indx % 8]
-                def set_kloc(kcoord):
+                def set_ploc(kcoord):
                     def find_us(sq_val):
                         if mpos == 1:
                             return sq_val.isupper()
@@ -39,9 +50,7 @@ def find_moves(board_obj):
                                         list(filter(lambda a: a,
                                         list(map(get_ourp, range(64)))))])
                     return find_our_locs(list(map(find_us, lin_board)))
-                if len(sq_info)  == 1:
-                    return set_kloc(get_coords(find_ek()))
-                return set_kloc(sq_info)
+                return set_ploc(sq_info)
             return atic_inner(list(itertools.chain.from_iterable(
                                board_obj['board'])))
         return set_side_ind(board_obj['moves'] % 2)
@@ -83,7 +92,8 @@ def make_a_move(info):
             def ep_check(from_to):
                 if abs(from_to[0][1] - from_to[1][1]) != 1:
                     return False
-                if from_to[0][0] != {2:3, 5:4}[from_to[1][0]]:
+                if from_to[0][0] + [-1, 1][board_obj['moves'] % 2] != \
+                            from_to[1][0]:
                     return False
                 return [from_to[0], from_to[1], 'ep']
             def analyze(piece):
@@ -149,19 +159,23 @@ def make_a_move(info):
                                 if opp_cases([aloc, tosq_coords]):
                                     return [aloc, tosq_coords]
                             if board_obj['ep_square'] != '-':
-                                return ep_check([aloc, get_sp_coord(
-                                        board_obj['ep_square'])])
+                                def epwrap(epvalue):
+                                    if not epvalue:
+                                        return False
+                                    if epvalue[1] == tosq_coords:
+                                        return epvalue
+                                    return False
+                                return epwrap(ep_check([aloc, get_sp_coord(
+                                        board_obj['ep_square'])]))
                             return False
                         return pwdtpos([4, 3][(pdir + 1) // 2])
                     return pdirect([-1, 1][board_obj['moves'] % 2])
                 return {'K': ksolve, 'Q': qsolve, 'R': rsolve,
                         'B': bsolve, 'N': nsolve, 'P': psolve
-                       }[piece[1]](piece[0])
+                       }[piece[1].upper()](piece[0])
             def opinfo(our_pcs):
                 return list(map(analyze, our_pcs))
             return opinfo(info[2])
-        # TO DO: Handle pawn promotion
-        # TO DOL Handle castling
         return set_tosq_coords(info[1])
     return set_board(info[0])
 
@@ -180,3 +194,8 @@ if __name__ == "__main__":
         conv_to_bobj('2/W:Ka1,Qa3,Bh1/B:Ka8')))
     print(are_they_in_check(
         conv_to_bobj('2/W:Ka1,b5,Nh1/B:Ka6')))
+    print(find_moves(
+        conv_to_bobj('2/W:b6,Ra1,Kc8/B:b7,Ka8,Bb8'))([7, 0]))
+    print(clean_up(find_moves(
+        conv_to_bobj('2/W:e4,f4,Qa5,Kc1/B:e5,Ka8'))([4, 4])))
+    

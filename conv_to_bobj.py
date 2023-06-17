@@ -4,6 +4,32 @@ Reformat web information into board object used by chess solver
 """
 import numpy as np
 
+def list_to_board(plocs):
+    """
+    Convert a list ot 64 squares back to a board
+    """
+    return list(map(list, np.array_split(list(plocs), 8)))
+
+def get_castle_info(board):
+    """
+    Given a board, return FEN-line castle notation
+    """
+    def ceval(indx):
+        def lvalue(col_indx):
+            if col_indx == 0:
+                return 'Qq'[indx // 7]
+            return 'Kk'[indx // 7]
+        def test_rside(col_indx):
+            if (indx == 0 and board[indx][col_indx] != 'R') or (
+                indx == 7 and board[indx][col_indx] != 'r'):
+                return '-'
+            return lvalue(col_indx)
+        if (indx == 0 and board[indx][4] != 'K') or (
+            indx == 7 and board[indx][4] != 'k'):
+            return '--'
+        return test_rside(7) + test_rside(0)
+    return ceval(0) + ceval(7)
+
 def conv_to_bobj(setup):
     """
     Input: A string consisting of the following three parts separated by
@@ -29,29 +55,13 @@ def conv_to_bobj(setup):
         -- ep_square: FEN-like en passant information
     """
     def parse_setup(setup):
-        return full_setup({'moves': int(setup[0]) *2 - 1,
+        return full_setup({'moves': int(setup[0]) * 2 - 1,
                            'board': get_board(setup[1:3])})
     def full_setup(part_set):
         return {'moves': part_set['moves'],
                 'board': part_set['board'],
                 'castle_info': get_castle_info(part_set['board']),
                 'ep_square': '-'}
-    def get_castle_info(board):
-        def ceval(indx):
-            def lvalue(col_indx):
-                if col_indx == 0:
-                    return 'Qq'[indx // 7]
-                return 'Kk'[indx // 7]
-            def test_rside(col_indx):
-                if (indx == 0 and board[indx][col_indx] != 'R') or (
-                    indx == 7 and board[indx][col_indx] != 'r'):
-                    return '-'
-                return lvalue(col_indx)
-            if (indx == 0 and board[indx][4] != 'K') or (
-                indx == 7 and board[indx][4] != 'k'):
-                return '--'
-            return test_rside(7) + test_rside(0)
-        return ceval(0) + ceval(7)
     def get_board(pparts):
         return list_to_board(list(map(merge_sides(conv_side(pparts[0])),
                                       enumerate(conv_side(pparts[1])))))
@@ -77,8 +87,6 @@ def conv_to_bobj(setup):
                 return list(map(get_sq_char, range(64)))
             return fix_side(''.join(list(map(str, mk_string(mk_pdict())))))
         return conv_plocs(part_info.split(":"))
-    def list_to_board(plocs):
-        return list(map(list, np.array_split(list(plocs), 8)))
     return parse_setup(setup.split('/'))
 
 def alg_to_boinfo(ploc):
@@ -96,4 +104,16 @@ def get_sp_coord(ploc):
     """
     Convert algebraic position to [row, column] coordinates
     """
-    return np.array_split(list(alg_to_boinfo(ploc)), 8)
+    return get_coords(alg_to_boinfo(ploc)[0])
+
+def get_coords(indx):
+    """
+    Given a single number index, convert to board coordinates
+    """
+    return [indx // 8, indx % 8]
+
+def coord_to_alg(coords):
+    """
+    Given coordinates, return the algebraic notation value
+    """
+    return 'abcdefgh'[coords[1]] + '12345678'[coords[0]]
