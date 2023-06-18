@@ -7,6 +7,7 @@ from functools import reduce
 from conv_to_bobj import conv_to_bobj, list_to_board, coord_to_alg
 from make_moves import are_they_in_check, find_moves, board_to_linear, \
             get_coords
+from odd_moves import castling, pawn_promotion
 
 def are_we_in_check(board_obj):
     """
@@ -117,6 +118,7 @@ def gen_moves(board_obj):
                             orig_board[amove[0][0]][amove[0][1]],
                             findx(0): ' '})
                 return list_to_board(mpm_in1(board_to_linear(orig_board)))
+
             def fix_brd(inner_brd):
                 def fix_brd2(inner_brd2):
                     if are_they_in_check(inner_brd2):
@@ -176,12 +178,16 @@ def gen_moves(board_obj):
         def handle_pmove(amove):
             return check_check([new_label(amove), new_bobj(amove)])
         return list(map(handle_pmove, mv_lst))
-    return dict(list(filter(lambda a: a[1],
-                            gm_inner(get_all_moves(board_obj)))))
+    return pawn_promotion(dict(list(filter(lambda a: a[1],
+                            gm_inner(get_all_moves(board_obj)))))) | \
+                            castling(board_obj)
 
 if __name__ == "__main__":
-    epw_obj = conv_to_bobj('2/W:g4,Ka1/B:a7,f4,Kc8')
-    epw_obj['ep_square'] = 'g3'
+    #epw_obj = conv_to_bobj('2/W:g4,Ka1/B:a7,f4,Kc8')
+    #epw_obj['ep_square'] = 'g3'
+    #epw_obj['moves'] += 1
+    #epw_obj = conv_to_bobj('2/W:g7,Ka1/B:f4,Kc8')
+    epw_obj = conv_to_bobj('2/W:Ka1/B:f2,g2,Kh8')
     epw_obj['moves'] += 1
     answer = gen_moves(epw_obj)
     import pdb; pdb.set_trace()

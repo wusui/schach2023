@@ -3,7 +3,8 @@
 Make moves on the board
 """
 import itertools
-from conv_to_bobj import conv_to_bobj, get_coords, get_sp_coord
+from conv_to_bobj import conv_to_bobj, get_coords, get_sp_coord, \
+                         list_to_board
 
 def clean_up(alist):
     """
@@ -16,6 +17,15 @@ def board_to_linear(bobj):
     Convert two dimensional board to a single list
     """
     return list(itertools.chain.from_iterable(bobj))
+
+def change_bsquare(bfunction):
+    """
+    Create a new board with bfunction applied to it (used to change
+    board square values)
+    """
+    def inner_cb(brd_info):
+        return list_to_board((bfunction((board_to_linear(brd_info)))))
+    return inner_cb(bfunction)
 
 def are_they_in_check(board_obj):
     """

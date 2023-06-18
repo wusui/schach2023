@@ -89,6 +89,12 @@ def conv_to_bobj(setup):
         return conv_plocs(part_info.split(":"))
     return parse_setup(setup.split('/'))
 
+def alg_square_to_lindx(ploc):
+    """
+    Convert algebraic square value to linear index
+    """
+    return '12345678'.index(ploc[-1]) * 8 + 'abcdefgh'.index(ploc[-2])
+
 def alg_to_boinfo(ploc):
     """
     Convert algebraic position to piece/coordinate information
@@ -97,8 +103,7 @@ def alg_to_boinfo(ploc):
         if len(ploc) == 2:
             return 'P'
         return ploc[0]
-    return ['12345678'.index(ploc[-1]) * 8 +
-            'abcdefgh'.index(ploc[-2]), gp_inner()]
+    return [alg_square_to_lindx(ploc), gp_inner()]
 
 def get_sp_coord(ploc):
     """
