@@ -37,6 +37,41 @@ def are_they_in_check(board_obj):
                 ['K', 'k'][board_obj['moves'] % 2]))
     return list(filter(None, find_moves(board_obj)(op_kloc())))
 
+def are_we_in_check(board_obj):
+    """
+    List opponents moves that attack our king
+    """
+    def shift_back(board_obj):
+        return {'moves': board_obj['moves'] + 1,
+                'board': board_obj['board'],
+                'castle_info': board_obj['castle_info'],
+                'ep_square': board_obj['ep_square']}
+    return are_they_in_check(shift_back(board_obj))
+
+def castle_field(brd_and_prev):
+    """
+    Updated castle_field in move/position dictionary
+    """
+    def cfield(fvalue):
+        def chk_csq(rindx):
+            if brd_and_prev[0][rindx][4] not in ['K', 'k']:
+                return '-'
+            if fvalue not in ['K', 'k']:
+                if brd_and_prev[0][rindx][7] not in ['R', 'r']:
+                    return '-'
+            if fvalue not in ['Q', 'q']:
+                if brd_and_prev[0][rindx][0] not in ['R', 'r']:
+                    return '-'
+            return fvalue
+        if fvalue == '-':
+            return fvalue
+        if fvalue.isupper():
+            return chk_csq(0)
+        return chk_csq(7)
+    if brd_and_prev[1] == '----':
+        return '----'
+    return ''.join(list(map(cfield, brd_and_prev[1])))
+
 def find_moves(board_obj):
     """
     Find moves.  If sq_info (inner function parameter) is K or k, use the
@@ -161,8 +196,8 @@ def make_a_move(info):
                                         and board_obj['board'] \
                                         [tosq_coords[0]][tosq_coords[1]] == \
                                         ' ' and board_obj['board'] \
-                                        [tosq_coords[0]][tosq_coords[1] - \
-                                        pdir] == ' ':
+                                        [tosq_coords[0] - pdir] \
+                                        [tosq_coords[1]] == ' ':
                                     return [aloc, tosq_coords]
                             if abs(tosq_coords[1] - aloc[1]) == 1 and \
                                     tosq_coords[0] == aloc[0] + pdir:

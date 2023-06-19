@@ -6,19 +6,8 @@ from functools import reduce
 
 from conv_to_bobj import conv_to_bobj, list_to_board, coord_to_alg
 from make_moves import are_they_in_check, find_moves, board_to_linear, \
-            get_coords
+            get_coords, are_we_in_check, castle_field
 from odd_moves import castling, pawn_promotion
-
-def are_we_in_check(board_obj):
-    """
-    List opponents moves that attack our king
-    """
-    def shift_back(board_obj):
-        return {'moves': board_obj['moves'] + 1,
-                'board': board_obj['board'],
-                'castle_info': board_obj['castle_info'],
-                'ep_square': board_obj['ep_square']}
-    return are_they_in_check(shift_back(board_obj))
 
 def gen_all_moves(board_obj):
     """
@@ -27,7 +16,6 @@ def gen_all_moves(board_obj):
     def find_moves_wrap(intv):
         return find_moves(board_obj)(get_coords(intv))
     if are_they_in_check(board_obj):
-        #return 'They are in check'
         return {}
     return list(map(find_moves_wrap, list(range(64))))
 
@@ -139,7 +127,8 @@ def gen_moves(board_obj):
                 return fix_brd2({
                     'moves': inner_brd['moves'] - 1,
                     'board': inner_brd['board'],
-                    'castle_info': inner_brd['castle_info'],
+                    'castle_info': castle_field([inner_brd['board'],
+                                                inner_brd['castle_info']]),
                     'ep_square': new_ep_val()})
             def ep_squash(ret_board):
                 def isqh(mnumb):
@@ -187,7 +176,10 @@ if __name__ == "__main__":
     #epw_obj['ep_square'] = 'g3'
     #epw_obj['moves'] += 1
     #epw_obj = conv_to_bobj('2/W:g7,Ka1/B:f4,Kc8')
-    epw_obj = conv_to_bobj('2/W:Ka1/B:f2,g2,Kh8')
-    epw_obj['moves'] += 1
+    #epw_obj = conv_to_bobj('2/W:Ka1/B:f2,g2,Kh8')
+    #epw_obj['moves'] += 1
+    #epw_obj = conv_to_bobj('2/W:Ke1/B:Rh8,Ra8,Ke8')
+    #epw_obj['moves'] += 1
+    epw_obj = conv_to_bobj('2/W:Ke1,Nb1,Rh1,h2/B:Ke8,h3,Ra2')
     answer = gen_moves(epw_obj)
     import pdb; pdb.set_trace()
